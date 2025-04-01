@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Posture Analyzer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    .upload-box {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    input[type="file"] {
+      margin: 10px 0 20px;
+      padding: 8px;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    button {
+      background-color: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    #result {
+        margin-top: 20px;
+        padding: 15px;
+        background: #ecf0f1;
+        border-radius: 10px;
+        max-width: 400px;
+        max-height: 200px; /* Set max height */
+        overflow-y: auto;   /* Enable vertical scrolling */
+        white-space: pre-wrap;
+        text-align: left;
+        }
+  </style>
+</head>
+<body>
+  <div class="upload-box">
+    <h1>Upload Your Gym Video</h1>
+    <input type="file" id="videoInput" accept="video/mp4" />
+    <br />
+    <button onclick="uploadVideo()">Analyze Posture</button>
+    <pre id="result"></pre>
+  </div>
+  <script>
+    async function uploadVideo() {
+      const fileInput = document.getElementById('videoInput');
+      const formData = new FormData();
+      formData.append("video", fileInput.files[0]);
+
+      const res = await fetch("http://127.0.0.1:5000/analyze", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      document.getElementById("result").textContent = data.feedback || data.error;
+    }
+  </script>
+</body>
+</html>
