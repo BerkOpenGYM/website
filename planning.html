@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workout Planner</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-green-100 to-blue-300 flex items-center justify-center min-h-screen p-4">
+<div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Workout Planner</h1>
+  
+  <form id="plannerForm" class="space-y-4">
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Height (cm):</label>
+      <input type="number" id="height" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition" required>
+    </div>
+    
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Weight (kg):</label>
+      <input type="number" id="weight" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition" required>
+    </div>
+    
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Experience Level:</label>
+      <select id="experience" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition">
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+      </select>
+    </div>
+    
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Goal:</label>
+      <textarea id="goal" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition" placeholder="E.g., build muscle, increase endurance" required></textarea>
+    </div>
+    
+    <button type="button" onclick="planWorkout()" class="w-full bg-indigo-500 text-white font-semibold py-3 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center">
+      <i class="fas fa-dumbbell mr-2"></i>
+      Generate Plan
+    </button>
+  </form>
+  
+  <!-- Loading indicator -->
+  <div id="loadingIndicator" class="hidden mt-6 flex justify-center">
+    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
+  </div>
+  
+  <!-- Plan summary - hidden initially -->
+  <div id="planSummary" class="hidden mt-6 bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+    <h2 class="text-xl font-bold text-indigo-800 mb-2">Your Workout Plan</h2>
+    <div id="workoutStats" class="grid grid-cols-2 gap-2 mb-3">
+      <!-- Stats will be filled here -->
+    </div>
+    <p class="text-sm text-indigo-700 italic">Based on your profile and goals</p>
+  </div>
+  
+  <!-- Plan result cards - instead of pre tag -->
+  <div id="planResultCards" class="mt-6 space-y-4"></div>
+
+  <!-- Error display -->
+  <div id="errorMessage" class="hidden mt-6 bg-red-100 p-4 rounded-lg text-red-700 border border-red-200"></div>
+</div>
+
+<script>
+async function planWorkout() {
+  // Show loading indicator
+  document.getElementById('loadingIndicator').classList.remove('hidden');
+  
+  // Hide previous results
+  document.getElementById('planSummary').classList.add('hidden');
+  document.getElementById('planResultCards').innerHTML = '';
+  document.getElementById('errorMessage').classList.add('hidden');
+  
+  const data = {
+    height: document.getElementById('height').value,
+    weight: document.getElementById('weight').value,
+    experience: document.getElementById('experience').value,
+    goal: document.getElementById('goal').value,
+  };
+  
+  try {
+    const res = await fetch('http://127.0.0.1:5000/plan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    
+    const json = await res.json();
+    
+    // Hide loading indicator
+    document.getElementById('loadingIndicator').classList.add('hidden');
+    
+    if (json.error) {
+      // Show error message
+      const errorElement = document.getElementById('errorMessage');
+      errorElement.textContent = json.error;
+      errorElement.classList.remove('hidden');
+    } else {
+      // Show plan summary
+      document.getElementById('planSummary').classList.remove('hidden');
+      
+      // Populate workout stats
+      const statsElement = document.getElementById('workoutStats');
+      statsElement.innerHTML = `
+        <div class="bg-white p-2 rounded shadow-sm">
+          <span class="text-gray-600 text-xs">Experience:</span>
+          <div class="font-semibold">${data.experience.charAt(0).toUpperCase() + data.experience.slice(1)}</div>
+        </div>
+        <div class="bg-white p-2 rounded shadow-sm">
+          <span class="text-gray-600 text-xs">Goal:</span>
+          <div class="font-semibold truncate">${data.goal}</div>
+        </div>
+      `;
+      
+      // Create exercise cards
+      const resultsElement = document.getElementById('planResultCards');
+      
+      json.plan.forEach((exercise, index) => {
+        // Determine equipment icon
+        let equipmentIcon = 'fa-dumbbell'; // default
+        if (exercise.equipments) {
+          if (exercise.equipments.toLowerCase().includes('barbell')) {
+            equipmentIcon = 'fa-weight-hanging';
+          } else if (exercise.equipments.toLowerCase().includes('body')) {
+            equipmentIcon = 'fa-person';
+          } else if (exercise.equipments.toLowerCase().includes('machine')) {
+            equipmentIcon = 'fa-robot';
+          }
+        }
+        
+        const exerciseCard = document.createElement('div');
+        exerciseCard.className = 'bg-white rounded-lg shadow-md overflow-hidden';
+        exerciseCard.innerHTML = `
+          <div class="bg-indigo-500 text-white p-3 flex justify-between items-center">
+            <h3 class="font-bold text-lg">${exercise.name}</h3>
+            <span class="bg-indigo-600 rounded-full h-6 w-6 flex items-center justify-center text-sm">${index + 1}</span>
+          </div>
+          <div class="p-4">
+            <div class="grid grid-cols-3 gap-2 mb-3">
+              <div class="bg-gray-50 p-2 rounded text-center">
+                <div class="text-sm text-gray-500">Sets</div>
+                <div class="font-bold text-lg">${exercise.num_set || '-'}</div>
+              </div>
+              <div class="bg-gray-50 p-2 rounded text-center">
+                <div class="text-sm text-gray-500">Reps</div>
+                <div class="font-bold text-lg">${exercise.reptition || '-'}</div>
+              </div>
+              <div class="bg-gray-50 p-2 rounded text-center">
+                <div class="text-sm text-gray-500">Rest</div>
+                <div class="font-bold text-lg">${exercise.rest_sec ? exercise.rest_sec + 's' : '-'}</div>
+              </div>
+            </div>
+            <div class="flex items-center mt-2 text-gray-600">
+              <i class="fas ${equipmentIcon} mr-2"></i>
+              <span>${exercise.equipments || 'No equipment'}</span>
+            </div>
+          </div>
+        `;
+        
+        resultsElement.appendChild(exerciseCard);
+      });
+    }
+  } catch (error) {
+    // Hide loading indicator
+    document.getElementById('loadingIndicator').classList.add('hidden');
+    
+    // Show error message
+    const errorElement = document.getElementById('errorMessage');
+    errorElement.textContent = "Error connecting to the server. Please try again later.";
+    errorElement.classList.remove('hidden');
+  }
+}
+</script>
+</body>
+</html>

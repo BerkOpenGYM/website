@@ -1,6 +1,6 @@
 import cv2
 import mediapipe as mp
-from google import generativeai as genai
+from google import genai
 from PIL import Image
 import os
 from dotenv import load_dotenv
@@ -11,7 +11,7 @@ video_path = "out/output.mp4"
 model_name = "gemini-1.5-flash"
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))  # use environment variable
+client = genai.Client(api_key='GEMINI_API_KEY') # use environment variable
 
 def extract_key_frames(video_path, max_frames=3):
     cap = cv2.VideoCapture(video_path)
@@ -39,7 +39,7 @@ def analyze_posture(video_path):
         raise ValueError("Video size exceeds 20MB limit.")
     
     frames = extract_key_frames(video_path)
-    model = genai.GenerativeModel(model_name)
+    model = client.models(model_name)
 
     response = model.generate_content([
         *frames,

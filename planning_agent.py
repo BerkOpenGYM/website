@@ -1,43 +1,12 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS  # add CORS support
 import os
+import json
+from openai import OpenAI  # updated client import
 from dotenv import load_dotenv
-from google import genai
-from PIL import Image
-import cv2
-import tempfile
-from openai import OpenAI
 from pydantic import BaseModel
+from openai import OpenAI
 
-from multimodal_lm import analyze_posture  # you already have this
-
-load_dotenv()
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-client = OpenAI(
-    api_key=os.getenv('OPENAI_API_KEY')
-)
-
-app = Flask(__name__)
-CORS(app)  # Allow front-end to talk to backend
-
-@app.route("/analyze", methods=["POST"])
-def analyze():
-    video = request.files.get("video")
-    if not video:
-        return jsonify({"error": "No video file uploaded"}), 400
-
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    tmp_path = tmp.name
-    tmp.close()
-    video.save(tmp_path)
-    try:
-        feedback = analyze_posture(tmp_path)
-        return jsonify({"feedback": feedback})
-    finally:
-        try:
-            os.remove(tmp_path)
-        except PermissionError:
-            print(f"Could not delete file: {tmp_path}")
 
 class Workout(BaseModel):
     name: str
@@ -48,6 +17,14 @@ class Workout(BaseModel):
 
 class WorkoutPlan(BaseModel):
     plan: list[Workout]
+
+# Load environment variables
+load_dotenv()
+
+# Initialize OpenAI client
+client = OpenAI(
+    api_key=os.getenv('OPENAI_API_KEY')
+)
 
 # Initialize Flask app and enable CORS
 app = Flask(__name__)
@@ -78,8 +55,7 @@ def plan_workout():
         response_format=WorkoutPlan
     )
     content = response.choices[0].message.parsed.model_dump_json()
-    print(content)
     return content
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
