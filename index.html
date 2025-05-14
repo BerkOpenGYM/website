@@ -1,30 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenGYM</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenGYM</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-blue-100 to-purple-300 flex items-center justify-center min-h-screen">
-  <div class="text-center">
-    <h1 class="text-4xl font-bold text-gray-800 mb-10">✨ OpenGYM ✨</h1>
-    <div class="space-x-4">
-      <button onclick="window.location.href='mlm.html'"
-        class="bg-gradient-to-r from-green-400 to-teal-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:scale-110 transition-transform">
-        Feedback Agent
-      </button>
-
-      <button onclick="window.location.href='planning.html'"
-        class="bg-gradient-to-r from-pink-500 to-red-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:scale-110 transition-transform">
-        Workout Builder / Planning Agent
-      </button>
-
-      <button onclick="window.location.href='learning.html'"
-        class="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:scale-110 transition-transform">
-        Learning Agent
-      </button>
-    </div>
-  </div>
+<div class="text-center">
+<h1 class="text-4xl font-bold text-gray-800 mb-10">✨ OpenGYM ✨</h1>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <button onclick="window.location.href='mlm.html'"
+  class="bg-gradient-to-r from-green-400 to-teal-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:scale-110 transition-transform">
+   Feedback Agent
+  </button>
+  <button onclick="window.location.href='planning.html'"
+  class="bg-gradient-to-r from-pink-500 to-red-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:scale-110 transition-transform">
+   Workout Builder / Planning Agent
+  </button>
+  <button onclick="window.location.href='learning.html'"
+  class="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:scale-110 transition-transform">
+   Learning Agent
+  </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <button onclick="window.location.href='demo.html'"
+  class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:scale-110 transition-transform">
+   Demo
+  </button>
+  <button onclick="window.location.href='agent.html'"
+  class="bg-gradient-to-r from-purple-500 to-violet-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:scale-110 transition-transform">
+   Full OpenGYM Agent
+  </button>
+</div>
+</div>
 </body>
 </html>
