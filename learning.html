@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Learning Agent</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-purple-100 to-pink-200 flex items-center justify-center min-h-screen p-4">
+<div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Learning Agent</h1>
+  
+  <form id="learnForm" class="space-y-4">
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Describe Your Challenge:</label>
+      <textarea 
+        id="challenge" 
+        rows="3" 
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition" 
+        placeholder="E.g., stuck on squats for 4 weeks" 
+        required
+      ></textarea>
+    </div>
+    
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">How do you feel about this?</label>
+      <div class="relative">
+        <select 
+          id="emotion" 
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 appearance-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition"
+        >
+          <option value="frustrated">Frustrated 😤</option>
+          <option value="motivated">Motivated 💪</option>
+          <option value="discouraged">Discouraged 😔</option>
+          <option value="confused">Confused 🤔</option>
+          <option value="excited">Excited 😃</option>
+          <option value="anxious">Anxious 😰</option>
+          <option value="neutral">Neutral 😐</option>
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+          <i class="fas fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+    
+    <button 
+      type="button" 
+      onclick="getSuggestions()" 
+      class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition flex items-center justify-center"
+    >
+      <i class="fas fa-lightbulb mr-2"></i>
+      Get Recommendations
+    </button>
+  </form>
+  
+  <!-- Loading indicator -->
+  <div id="loadingIndicator" class="hidden mt-6 flex justify-center">
+    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+  </div>
+  
+  <div id="suggestionsContainer" class="mt-6 space-y-4"></div>
+</div>
+
+<script>
+async function getSuggestions() {
+  // Show loading indicator
+  const loadingIndicator = document.getElementById('loadingIndicator');
+  loadingIndicator.classList.remove('hidden');
+  
+  // Clear previous suggestions
+  document.getElementById('suggestionsContainer').innerHTML = '';
+  
+  const payload = {
+    challenge: document.getElementById('challenge').value,
+    emotion: document.getElementById('emotion').value
+  };
+  
+  try {
+    const res = await fetch("http://127.0.0.1:5000/learn", {
+      method: "POST",
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    
+    const json = await res.json();
+    
+    // Hide loading indicator
+    loadingIndicator.classList.add('hidden');
+    
+    const container = document.getElementById('suggestionsContainer');
+    
+    if (json.error) {
+      const errorMessage = document.createElement('div');
+      errorMessage.className = 'bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-lg';
+      errorMessage.textContent = json.error;
+      container.appendChild(errorMessage);
+    } else {
+      renderSuggestions(json.suggestions);
+    }
+  } catch (error) {
+    // Hide loading indicator
+    loadingIndicator.classList.add('hidden');
+    
+    // Show error message
+    const container = document.getElementById('suggestionsContainer');
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-lg';
+    errorMessage.textContent = "Error connecting to the server. Please try again later.";
+    container.appendChild(errorMessage);
+  }
+}
+
+function renderSuggestions(suggestions) {
+  const container = document.getElementById('suggestionsContainer');
+  
+  if (!suggestions || suggestions.length === 0) {
+    const noResults = document.createElement('div');
+    noResults.className = 'bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg';
+    noResults.textContent = "No recommendations found. Please try describing your challenge differently.";
+    container.appendChild(noResults);
+    return;
+  }
+  
+  // Get the selected emotion
+  const emotion = document.getElementById('emotion').value;
+  
+  // Add emotion context message
+  const emotionContext = document.createElement('div');
+  emotionContext.className = 'mb-4 text-center';
+  
+  let emotionIcon = '';
+  switch(emotion) {
+    case 'frustrated': emotionIcon = '😤'; break;
+    case 'motivated': emotionIcon = '💪'; break;
+    case 'discouraged': emotionIcon = '😔'; break;
+    case 'confused': emotionIcon = '🤔'; break;
+    case 'excited': emotionIcon = '😃'; break;
+    case 'anxious': emotionIcon = '😰'; break;
+    default: emotionIcon = '😐';
+  }
+  
+  emotionContext.innerHTML = `
+    <span class="inline-block bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+      Recommendations for ${emotion} ${emotionIcon} learners
+    </span>
+  `;
+  container.appendChild(emotionContext);
+  
+  // Add suggestions
+  suggestions.forEach((sugg, idx) => {
+    const card = document.createElement('div');
+    card.className = 'bg-white rounded-lg p-4 shadow border border-gray-100 transition transform hover:scale-[1.01] hover:shadow-md';
+    
+    // Determine icon based on type
+    let typeIcon = 'fa-book';
+    if (sugg.type && typeof sugg.type === 'string') {
+      if (sugg.type.toLowerCase().includes('exercise')) {
+        typeIcon = 'fa-dumbbell';
+      } else if (sugg.type.toLowerCase().includes('technique')) {
+        typeIcon = 'fa-graduation-cap';
+      } else if (sugg.type.toLowerCase().includes('mindset')) {
+        typeIcon = 'fa-brain';
+      } else if (sugg.type.toLowerCase().includes('video')) {
+        typeIcon = 'fa-video';
+      }
+    }
+    
+    card.innerHTML = `
+      <div class="flex items-start">
+        <div class="bg-indigo-100 rounded-full h-8 w-8 flex items-center justify-center mr-3 mt-1">
+          <span class="text-indigo-700 font-bold">${idx + 1}</span>
+        </div>
+        <div class="flex-1">
+          <h2 class="text-xl font-semibold mb-1">${sugg.title}</h2>
+          <div class="flex items-center text-sm text-gray-600 mb-2">
+            <i class="fas ${typeIcon} mr-1"></i>
+            <span>${sugg.type || 'Recommendation'}</span>
+          </div>
+          <p class="text-gray-700 mb-3">${sugg.description}</p>
+          ${sugg.link ? `
+            <a 
+              href="${sugg.link}" 
+              target="_blank" 
+              class="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              Learn more
+              <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+            </a>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>

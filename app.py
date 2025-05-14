@@ -17,6 +17,8 @@ client = OpenAI(
     api_key=os.getenv('OPENAI_API_KEY')
 )
 
+shared_memory = {"workout_plan": [], "goal": [], "suggestions": []}
+
 app = Flask(__name__)
 CORS(app)  # Allow front-end to talk to backend
 
@@ -66,6 +68,7 @@ def plan_workout():
         f"User profile: height {height} cm, weight {weight} kg, experience level {experience}. Goal: {goal}. "
         "Generate a weekly workout plan in JSON format as an array of exercises. "
         "Each exercise object should have keys: 'name', 'sets', 'reps', 'rest_sec'."
+        f"Here are the learning lession and previous workout history {shared_memory}"
     )
 
     # Call the OpenAI Chat Completions endpoint
@@ -78,8 +81,50 @@ def plan_workout():
         response_format=WorkoutPlan
     )
     content = response.choices[0].message.parsed.model_dump_json()
-    print(content)
+    shared_memory['workout_plan'].append(content)
+    shared_memory['goal'].append(goal)
     return content
+
+class Suggestion(BaseModel):
+    title: str
+    type: str
+    description: str
+    link: str
+
+class LearningResponse(BaseModel):
+    suggestions: list[Suggestion]
+
+# add this endpoint below your /plan route
+@app.route("/learn", methods=["POST"])
+def learn():
+    payload = request.get_json() or {}
+    print(payload)
+    challenge = payload.get("challenge", "")
+    emotion  = payload.get("emotion", "")
+    system_msg = (
+        "You are a fitness learning agent that identifies training plateaus "
+        "and recommends human-led resources or courses to overcome them."
+    )
+    user_msg = f"User challenge: {challenge}."
+    if emotion:
+        user_msg += f" Emotion: {emotion}."
+    user_msg += (
+        " Provide your recommendations as JSON with key 'suggestions': "
+        "an array of objects with 'title', 'type', 'description', and 'link'."
+    )
+    # call OpenAI (using whatever `client` you already have)
+    response = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_msg}
+        ],
+        response_format=LearningResponse
+    )
+    content = response.choices[0].message.parsed.model_dump_json()
+    shared_memory['suggestions'].append(content)
+    return content
+
 
 if __name__ == "__main__":
     app.run(debug=True)
