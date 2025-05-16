@@ -39,12 +39,12 @@ def format_shared_memory(k=5):
                 string += f"- Goal: {plan['goal']}\n   Plan: {plan['plan']}\n"
 
     if shared_memory["feedback"]:
-        string += "Previous Feedback on Exercise Forms:\n"
+        string += "\nPrevious Feedback on Exercise Forms:\n"
         for feedback in shared_memory["feedback"][-k:]:
             string += f"- {feedback}\n"
 
     if shared_memory["learning_suggestions"]:
-        string += "Previous Learning Suggestions:\n"
+        string += "\nPrevious Learning Suggestions:\n"
         for suggestion in shared_memory["learning_suggestions"][-k:]:
             try:
                 suggestion_list = json.loads(suggestion)["suggestions"]
