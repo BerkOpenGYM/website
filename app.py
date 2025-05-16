@@ -86,10 +86,6 @@ class Workout(BaseModel):
 class WorkoutPlan(BaseModel):
     plan: list[Workout]
 
-# Initialize Flask app and enable CORS
-app = Flask(__name__)
-CORS(app)  # allow all origins; adjust later for more restrictive policies
-
 @app.route('/plan', methods=['POST'])
 def plan_workout():
     data = request.get_json()
@@ -167,4 +163,5 @@ def learn():
 
 
 if __name__ == "__main__":
+    print("Flask app loaded, routes:", app.url_map)
     app.run(debug=True)

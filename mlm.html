@@ -2,90 +2,171 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Posture Analyzer</title>
+  <title>Gym Posture Analyzer</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f8;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f8fb;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100vh;
       margin: 0;
     }
 
-    h1 {
-      color: #2c3e50;
-      margin-bottom: 20px;
+    .upload-box {
+      background-color: white;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      width: 500px;
+      animation: fadeIn 0.5s ease-in-out;
     }
 
-    .upload-box {
-      background: white;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      text-align: center;
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #2c3e50;
     }
 
     input[type="file"] {
-      margin: 10px 0 20px;
-      padding: 8px;
+      padding: 10px;
       border: 2px dashed #ccc;
       border-radius: 10px;
       width: 100%;
-      max-width: 300px;
+      margin-bottom: 20px;
     }
 
     button {
       background-color: #3498db;
       color: white;
-      padding: 10px 20px;
       border: none;
+      padding: 12px 24px;
       border-radius: 8px;
-      font-size: 16px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      font-size: 16px;
+      transition: background-color 0.2s ease;
     }
 
     button:hover {
       background-color: #2980b9;
     }
 
-    #result {
-        margin-top: 20px;
-        padding: 15px;
-        background: #ecf0f1;
-        border-radius: 10px;
-        max-width: 400px;
-        max-height: 200px; /* Set max height */
-        overflow-y: auto;   /* Enable vertical scrolling */
-        white-space: pre-wrap;
-        text-align: left;
-        }
+    #result-container {
+      margin-top: 25px;
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: #f0f4f8;
+      border-radius: 8px;
+      padding: 15px;
+      font-size: 14px;
+      color: #2d3436;
+      text-align: left;
+      display: none;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .spinner {
+      margin-top: 20px;
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      display: none;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #videoPreview {
+      display: none;
+      margin-top: 20px;
+      border-radius: 10px;
+      max-width: 100%;
+      max-height: 300px;
+      width: auto;
+      height: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
   <div class="upload-box">
     <h1>Upload Your Gym Video</h1>
-    <input type="file" id="videoInput" accept="video/mp4" />
+    <input type="file" id="videoInput" accept="video/mp4" onchange="previewVideo()" />
+    <video id="videoPreview" width="100%" controls style="display: none; margin-top: 20px; border-radius: 10px;"></video>
+
     <br />
     <button onclick="uploadVideo()">Analyze Posture</button>
-    <pre id="result"></pre>
+
+    <div class="spinner" id="loadingSpinner"></div>
+
+    <div id="result-container">
+      <div id="result"></div>
+    </div>
   </div>
+
   <script>
     async function uploadVideo() {
       const fileInput = document.getElementById('videoInput');
+      const resultBox = document.getElementById('result-container');
+      const result = document.getElementById('result');
+      const spinner = document.getElementById('loadingSpinner');
+
+      if (!fileInput.files.length) {
+        alert("Please select a video file first.");
+        return;
+      }
+
+      resultBox.style.display = 'none';
+      spinner.style.display = 'block';
+
       const formData = new FormData();
       formData.append("video", fileInput.files[0]);
 
-      const res = await fetch("http://127.0.0.1:5000/analyze", {
-        method: "POST",
-        body: formData
-      });
+      try {
+        const res = await fetch("http://127.0.0.1:5000/analyze", {
+          method: "POST",
+          body: formData
+        });
 
-      const data = await res.json();
-      document.getElementById("result").textContent = data.feedback || data.error;
+        const data = await res.json();
+
+        result.innerHTML = marked.parse(data.feedback || data.error || "No feedback received.");
+        resultBox.style.display = 'block';
+
+      } catch (err) {
+        result.innerHTML = "❌ Error contacting server.";
+        resultBox.style.display = 'block';
+      } finally {
+        spinner.style.display = 'none';
+      }
+    }
+    function previewVideo() {
+      const fileInput = document.getElementById('videoInput');
+      const preview = document.getElementById('videoPreview');
+      const file = fileInput.files[0];
+  
+      if (file && file.type.startsWith('video/')) {
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+        preview.style.display = 'block';
+      } else {
+        preview.src = '';
+        preview.style.display = 'none';
+      }
     }
   </script>
 </body>
