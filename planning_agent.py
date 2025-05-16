@@ -10,7 +10,7 @@ from openai import OpenAI
 
 class Workout(BaseModel):
     name: str
-    reptition: int
+    repetition: int
     num_set: int
     rest_sec: int
     equipments: str
